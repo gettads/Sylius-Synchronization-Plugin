@@ -1,0 +1,7 @@
+default:
+    suites:
+        replace_this_name:
+            contexts:
+                - sylius.behat.context.ui.admin.replace_this_name
+            filters:
+                tags: "@replace_this_name"

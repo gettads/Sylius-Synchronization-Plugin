@@ -1,0 +1,37 @@
+app:
+    ui:
+        synchronizations: Synchronizations
+        synchronization: Synchronization
+        header_title: Synchronizations
+        menu_title: Synchronizations
+    sync:
+        statuses:
+            before_sync: Before sync
+            error_on_sync_mapping: Error on mapping
+            error_on_sync_transport: Error on transport
+            sync_in_progress: Sync in progress
+            sync_error: Error on sync process
+            sync_ok: OK
+        types:
+            products: Products
+            categories: Categories
+            attributes: Attributes
+            customers: Customers
+            orders: Orders
+        
+        flow_types:
+            incoming: Incoming
+            outcoming: Outcoming
+        type: Type
+        flow_type: Flow
+        operation_code: Operation code
+        sync_id: Sync ID
+        operation_id: Operation ID
+        payload: Payload
+        status: Status
+        error_message: Error message
+        created_at: Created at
+        updated_at: Updated at
+        
+        
+        

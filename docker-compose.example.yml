@@ -1,0 +1,118 @@
+version: "3.4"
+
+services:
+    php:
+        container_name: php-sylius-synchronization
+        hostname: php-sylius-plugin-dev # nginx container depends on this DNS name, see 'set $backendfpm' in https://github.com/pb-sylius/docker-plugin-dev/blob/php8.1/docker/nginx/conf.d/default.conf
+        image: 'docker-registry.gtt.cz:5000/sylius-plugin-dev-php:8.1'
+        environment:
+            XDEBUG_CONFIG: "client_host=172.17.0.1 client_port=9003 remote_log=/tmp/xdebug.log"
+            XDEBUG_TRIGGER: "no" # use XDEBUG_TRIGGER: "no" in docker-compose.override.yml to start XDebug for EVERY request (use `export XDEBUG_TRIGGER: "yes"` to enable it in CLI and `unset XDEBUG_TRIGGER` to disable for CLI again - in browser use same-named variable in GET, POST or COOKIE, or legacy named via some browser extension). For a single shot can be used inline environment variable like `XDEBUG_TRIGGER=yes ./bin/console
+            PHP_IDE_CONFIG: "serverName=SyliusSynchronization" # key for IDE XDebug profile
+            APP_ENV: "test"
+            APP_DEBUG: "1"
+            APP_SECRET: "${APP_SECRET:-EDITME}"
+            # set MYSQL_ variables in .env file or in docker-compose.override.yml
+            DATABASE_URL: "mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-pass_root}@mysql-sylius-synchronization:3306/${MYSQL_DATABASE:-sylius_synchronization_plugin_test}"
+            MAILER_URL: "smtp://mailhog:1025"
+            PHP_DATE_TIMEZONE: "${PHP_DATE_TIMEZONE:-UTC}"
+            # test it by `curl -XGET $ELASTICSEARCH_URL`
+            ELASTICSEARCH_URL: "${ELASTICSEARCH_URL:-http://pass:elastic@elasticsearch-sylius-synchronization:9200/}"
+        volumes:
+            - .:/srv/sylius:rw,delegated
+        ports:
+            # mapped PHP web port is useful to connect to PHP built-in web server
+            # Host port 0 is for "first available"
+            # How to change it:
+            # - set PHP_HOST_MAPPING_PORT variable in .env file for example
+            # - or extends ports in docker-compose.override.yml
+            # To find out used port use `docker ps` and look for PORTS column to see mapped host port, including IP it can be for example http://0.0.0.0:32770/ which is roughly equivalent to http://127.0.0.1:32770/ for web browser
+            - "${PHP_HOST_MAPPING_PORT:-0}:80"
+
+    nginx-sylius-synchronization:
+        container_name: nginx-sylius-synchronization
+        image: 'docker-registry.gtt.cz:5000/sylius-plugin-dev-nginx:1.24'
+        ports:
+            # Host port 0 is for "first available"
+            # How to change it:
+            # - set NGINX_HOST_MAPPING_PORT variable in .env file for example
+            # - or extends ports in docker-compose.override.yml
+            # To find out used port use `docker ps` and look for PORTS column to see mapped host port, including IP it can be for example http://0.0.0.0:32771/ which is roughly equivalent to http://127.0.0.1:32771/ for web browser
+            - "${NGINX_HOST_MAPPING_PORT:-0}:80"
+        volumes:
+            - .:/srv/sylius:rw,delegated
+
+    mysql-sylius-synchronization:
+        container_name: mysql-sylius-synchronization
+        image: mariadb:10.6
+        environment:
+            - MYSQL_ROOT_PASSWORD=pass_root
+            - MYSQL_DATABASE=sylius_synchronization_plugin_test
+            - MYSQL_USER=sylius
+            - MYSQL_PASSWORD=pass
+        ports:
+            # Host port 0 is for "first available"
+            # How to change it:
+            # - set MYSQL_HOST_MAPPING_PORT variable in .env file for example
+            # - or extends ports in docker-compose.override.yml
+            # To find out used port use `docker ps` and look for PORTS column to see mapped host port, including IP it can be for example 0.0.0.0:32772 which is roughly equivalent to 127.0.0.1:32772 for internal network requests
+            - "${MYSQL_HOST_MAPPING_PORT:-0}:3306"
+
+    mailhog-sylius-synchronization:
+        container_name: mailhog-sylius-synchronization
+        image: mailhog/mailhog:latest
+        environment:
+            - MH_STORAGE=maildir
+        # volumes:
+        #   - ./docker/mailhog/maildir:/maildir:rw,delegated
+        ports:
+            # Host port 0 is for "first available"
+            # How to change it:
+            # - set MAILHOG_HOST_MAPPING_PORT variable in .env file for example
+            # - or extends ports in docker-compose.override.yml
+            # To find out used port use `docker ps` and look for PORTS column to see mapped host port, including IP it can be for example 0.0.0.0:32772 which is roughly equivalent to 127.0.0.1:32772 for internal network requests
+            - "${MAILHOG_HOST_MAPPING_PORT:-0}:8025"
+
+    # - it needs increase vm.max_map_count on your host machine https://stackoverflow.com/questions/42300463/elasticsearch-bootstrap-checks-failing
+    #   sudo sysctl -w vm.max_map_count=262144
+    # - to get password `bin/elasticsearch-reset-password --username elastic --interactive --url https://localhost:9200`
+    # - to get enrollment token `bin/elasticsearch-create-enrollment-token --scope kibana --url https://localhost:9200`
+    # - to connect to Elastic Docker service use `docker compose exec elasticsearch bash`
+    elasticsearch:
+        container_name: elasticsearch-sylius-synchronization
+        hostname: elasticsearch-sylius-synchronization
+        image: elasticsearch:8.6.2
+        environment:
+            - xpack.security.enabled=false # to remove https with problematic self-signed certificate
+            - discovery.type=single-node
+            - bootstrap.memory_lock=true
+            - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-pass}
+            - ES_JAVA_OPTS=-Xms750m -Xmx750m
+        volumes:
+            - elasticsearch_synchronization_data:/usr/share/elasticsearch/data:rw,delegated
+        ports:
+            # Host port 0 is for "first available"
+            # How to change it:
+            # - set ELASTICSEARCH_HOST_MAPPING_PORT variable in .env file for example
+            # - or extends ports in docker-compose.override.yml
+            # To find out used port use `docker ps` and look for PORTS column to see mapped host port, including IP it can be for example 0.0.0.0:32772 which is roughly equivalent to 127.0.0.1:32772 for internal network requests
+            - "${ELASTICSEARCH_HOST_MAPPING_PORT:-0}:9200"
+
+    kibana:
+        container_name: kibana-sylius-synchronization
+        hostname: kibana-sylius-synchronization
+        image: kibana:8.6.2
+        environment:
+            ELASTICSEARCH_HOSTS: "${ELASTICSEARCH_URL:-http://pass:elastic@elasticsearch-sylius-synchronization:9200/}"
+        depends_on:
+            - elasticsearch
+        ports:
+            # Host port 0 is for "first available"
+            # How to change it:
+            # - set KIBANA_HOST_MAPPING_PORT variable in .env file for example
+            # - or extends ports in docker-compose.override.yml
+            # To find out used port use `docker ps` and look for PORTS column to see mapped host port, including IP it can be for example 0.0.0.0:32772 which is roughly equivalent to 127.0.0.1:32772 for internal network requests
+            - "${KIBANA_HOST_MAPPING_PORT:-0}:5601"
+
+volumes:
+    elasticsearch_synchronization_data:

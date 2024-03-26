@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+
+<!--
+This file was created by developers working at BitBag
+Do you need more information about us and what we do? Visit our https://bitbag.io website!
+We are hiring developers from all over the world. Join us and start your new, exciting adventure and become part of us: https://bitbag.io/career
+-->
+
+<resources xmlns="https://api-platform.com/schema/metadata"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="https://api-platform.com/schema/metadata https://api-platform.com/schema/metadata/metadata-2.0.xsd"
+>
+    <resource class="Gtt\SynchronizationPlugin\Api\Input\SyncStatusOperation" shortName="Synchronization">
+        <attribute name="validation_groups">sylius</attribute>
+        <attribute name="messenger">input</attribute>
+        <itemOperations />
+        <collectionOperations>
+            <collectionOperation name="sync_receive">
+                <attribute name="method">POST</attribute>
+                <attribute name="messenger">input</attribute>
+                <attribute name="path">/synchronizations/receive-operation</attribute>
+                <attribute name="input">Gtt\SynchronizationPlugin\Api\Input\ReceiveOperation</attribute>
+                <attribute name="output">false</attribute>
+                <attribute name="openapi_context">
+                    <attribute name="summary">Recieves of incoming data for local synchronization.</attribute>
+                    <attribute name="requestBody">
+                        <attribute name="content">
+                            <attribute name="application/json">
+                                <attribute name="schema">
+                                    <attribute name="type">object</attribute>
+                                    <attribute name="properties">
+                                        <attribute name="operationId">
+                                            <attribute name="type">string</attribute>
+                                        </attribute>
+                                        <attribute name="operationCode">
+                                            <attribute name="type">string</attribute>
+                                        </attribute>
+                                        <attribute name="data">
+                                            <attribute name="type">array</attribute>
+                                            <attribute name="items">
+                                                <attribute name="type">object</attribute>
+                                            </attribute>
+                                        </attribute>
+                                    </attribute>
+                                </attribute>
+                            </attribute>
+                        </attribute>
+                    </attribute>
+                </attribute>
+            </collectionOperation>
+            <collectionOperation name="sync_update_status">
+                <attribute name="method">POST</attribute>
+                <attribute name="messenger">input</attribute>
+                <attribute name="path">/synchronizations/sync-status</attribute>
+                <attribute name="input">Gtt\SynchronizationPlugin\Api\Input\SyncStatusOperation</attribute>
+                <attribute name="output">false</attribute>
+            </collectionOperation>
+        </collectionOperations>
+        <property name="id" identifier="true" writable="false" readable="false" />
+    </resource>
+</resources>

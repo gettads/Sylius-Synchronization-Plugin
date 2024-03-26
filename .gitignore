@@ -1,0 +1,7 @@
+/vendor/
+/var/
+/tests_covarage/
+composer.lock
+.phpcs-cache
+.phpunit.result.cache
+/docker-compose.yml

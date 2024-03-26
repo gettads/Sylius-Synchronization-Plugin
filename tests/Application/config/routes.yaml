@@ -1,0 +1,2 @@
+gtt_sylius_synchronization_plugin:
+    resource: "../../../src/Resources/config/routing.yml"

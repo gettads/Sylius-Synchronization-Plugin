@@ -1,0 +1,36 @@
+image: docker-registry.praguebest.cz:5000/sylius-plugin-deploy-php:8.1
+
+services:
+    -   name: mariadb:10.6.13
+        alias: mariadb # docs do not mention this - it is a DNS for Docker network
+
+variables:
+    # uses predefined GitLab CI variables https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+    COMPOSER_HOME: $CI_PROJECT_DIR/.composer
+    MYSQL_ROOT_PASSWORD: pass_root
+    MYSQL_DATABASE: sylius_synchronization_plugin_test
+    DATABASE_URL: "mysql://root:pass_root@mariadb:3306/${MYSQL_DATABASE}"
+
+cache:
+    paths:
+        - ./.composer # can not use absolute path as GitLab supports relative only, see 'WARNING: /pbs-deploy/docker-build/sylius/sylius/sylius-master/.composer: no matching files. Ensure that the artifact path is relative to the working directory'
+        - ./vendor
+        - ./tests/Application/node_modules
+    key: ${CI_PROJECT_ID}-${CI_COMMIT_REF_SLUG}-test-libraries
+
+stages:
+    - test
+
+test:
+    stage: test
+    interruptible: true # will be interrupted if new commit triggers same pipeline for same branch to free runner for new version https://docs.gitlab.com/ee/ci/yaml/#interruptible
+    script:
+        - composer install
+        - yarn --cwd tests/Application install
+        - yarn --cwd tests/Application encore dev
+        # - php tests/Application/bin/console doctrine:database:create --env test # MariaDB creates it automatically
+        - php tests/Application/bin/console doctrine:schema:create --env test
+        - composer checks
+    tags:
+        # runner has to be enabled https://gitlab.praguebest.cz/sylius/praguebest-sylius-synchronization-plugin/-/settings/ci_cd#js-runners-settings
+        - runner2-docker

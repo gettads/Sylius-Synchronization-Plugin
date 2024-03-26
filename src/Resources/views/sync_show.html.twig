@@ -1,0 +1,100 @@
+{% extends '@SyliusAdmin/layout.html.twig' %}
+
+{% block title %}{{ 'app.ui.synchronizations'|trans }} {{ parent() }} {% endblock %}
+
+{% block content %}
+    <h1>{{ 'app.ui.synchronization'|trans }} #{{ resource.id }} [{{ resource.createdAt | date('Y-m-d H:i:s')}}]</h1>
+    {% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
+    {% set index_url = path(
+        configuration.vars.index.route.name|default(configuration.getRouteName('index')),
+        configuration.vars.index.route.parameters|default(configuration.vars.route.parameters|default({}))
+    ) %}
+    {% set breadcrumb = configuration.vars.breadcrumb|default(metadata.applicationName~'.ui.'~metadata.pluralName) %}
+    {% set breadcrumbs = [
+        { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+        { label: breadcrumb|trans, url: index_url },
+        { label: resource.id },
+    ] %}
+    {{ breadcrumb.crumble(breadcrumbs) }}
+
+    <table class="ui celled table">
+        <tbody>
+
+        {% if resource.createdAt is defined %}
+            <tr>
+                <td>{{ 'app.sync.created_at'|trans }}</td>
+                <td>{{ resource.createdAt | date('Y-m-d H:i:s') }}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.updatedAt != null %}
+            <tr>
+                <td>{{ 'app.sync.updated_at'|trans }}</td>
+                <td>{{ resource.updatedAt | date('Y-m-d H:i:s') }}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.type is defined %}
+            <tr>
+                <td>{{ 'app.sync.type'|trans }}</td>
+                <td>{{ ('app.sync.types.' ~ resource.type) | trans}}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.flowType is defined %}
+            <tr>
+                <td>{{ 'app.sync.flow_type'|trans }}</td>
+                <td>{{ ('app.sync.flow_types.' ~ resource.flowType) | trans}}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.operationCode is defined %}
+            <tr>
+                <td>{{ 'app.sync.operation_code'|trans }}</td>
+                <td>{{ resource.operationCode }}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.syncId is defined %}
+            <tr>
+                <td>{{ 'app.sync.sync_id'|trans }}</td>
+                <td>{{ resource.syncId }}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.operationId is defined %}
+            <tr>
+                <td>{{ 'app.sync.operation_id'|trans }}</td>
+                <td>{{ resource.operationId }}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.payload is defined  %}
+            <tr>
+                <td>{{ 'app.sync.payload'|trans }}</td>
+                <td>{{ dump(resource.payload) }}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.status is defined %}
+            <tr>
+                <td>{{ 'app.sync.status'|trans }}</td>
+                <td>{{ resource.status }}</td>
+            </tr>
+        {% endif %}
+
+        {% if resource.errorMessage != '' and resource.errorMessage != null %}
+            <tr>
+                <td>{{ 'app.sync.error_message'|trans }}</td>
+                <td>{{ dump(resource.errorMessage) }}</pre></td>
+            </tr>
+        {% endif %}
+
+        </tbody>
+    </table>
+
+    <a class="ui labeled icon button " href="{{ url('app_admin_synchronization_index') }}">
+        <i class="icon long arrow alternate left"></i>
+        {{ 'app.ui.synchronizations'|trans }}
+    </a>
+{% endblock %}
